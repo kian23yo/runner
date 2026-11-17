@@ -35,7 +35,10 @@ public class PlayerJump : MonoBehaviour
             break;
         }
 
-        if (isGrounded && Keyboard.current != null
+        // 没开始 / 已结束都不允许起跳
+        bool canAct = GameManager.Instance == null || GameManager.Instance.IsRunning;
+
+        if (canAct && isGrounded && Keyboard.current != null
             && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
