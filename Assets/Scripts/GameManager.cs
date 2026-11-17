@@ -7,8 +7,11 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    private const string BestKey = "BestScore";
+
     [Header("界面")]
     [SerializeField] private TMP_Text scoreText;
+    [SerializeField] private TMP_Text bestText;
     [SerializeField] private GameObject gameOverText;
     [SerializeField] private Canvas floatCanvas;
 
@@ -29,10 +32,17 @@ public class GameManager : MonoBehaviour
     private float score;
     private bool isGameOver;
     private int lastHundred;
+    private int bestScore;
 
     private void Awake()
     {
         Instance = this;
+    }
+
+    private void Start()
+    {
+        bestScore = PlayerPrefs.GetInt(BestKey, 0);
+        RefreshBestText();
     }
 
     private void Update()
@@ -108,12 +118,42 @@ public class GameManager : MonoBehaviour
         if (groundScroller != null) groundScroller.enabled = false;
         if (spawner != null) spawner.enabled = false;
         if (coinSpawner != null) coinSpawner.enabled = false;
+
+        int finalScore = Mathf.FloorToInt(score);
+
+        if (finalScore > bestScore)
+        {
+            bestScore = finalScore;
+            PlayerPrefs.SetInt(BestKey, bestScore);
+            PlayerPrefs.Save();
+        }
+
+        RefreshBestText();
+        ShowResult(finalScore);
+
         if (gameOverText != null) gameOverText.SetActive(true);
+
         if (audioSource != null && hurtSound != null)
             audioSource.PlayOneShot(hurtSound);
         if (CameraShake.Instance != null)
             CameraShake.Instance.Shake(0.35f, 0.3f);
 
         Time.timeScale = 0f;
+    }
+
+    private void RefreshBestText()
+    {
+        if (bestText != null)
+            bestText.text = "BEST " + bestScore;
+    }
+
+    private void ShowResult(int finalScore)
+    {
+        if (gameOverText == null) return;
+
+        TMP_Text label = gameOverText.GetComponent<TMP_Text>();
+        if (label == null) return;
+
+        label.text = "GAME OVER\nSCORE " + finalScore + "\nBEST " + bestScore + "\n\nPress R to Restart";
     }
 }
