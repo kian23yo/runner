@@ -7,11 +7,15 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    // 给别的脚本查询"现在能不能操作"
+    public bool IsRunning => started;
+
     private const string BestKey = "BestScore";
 
     [Header("界面")]
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TMP_Text bestText;
+    [SerializeField] private GameObject titleText;
     [SerializeField] private GameObject gameOverText;
     [SerializeField] private Canvas floatCanvas;
 
@@ -30,6 +34,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private AudioClip coinSound;
 
     private float score;
+    private bool started;
     private bool isGameOver;
     private int lastHundred;
     private int bestScore;
@@ -43,10 +48,23 @@ public class GameManager : MonoBehaviour
     {
         bestScore = PlayerPrefs.GetInt(BestKey, 0);
         RefreshBestText();
+
+        // 开局冻结，等玩家按空格
+        if (titleText != null) titleText.SetActive(true);
+        Time.timeScale = 0f;
     }
 
     private void Update()
     {
+        // 阶段一：还没开始
+        if (!started)
+        {
+            if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+                BeginRun();
+            return;
+        }
+
+        // 阶段二：已结束
         if (isGameOver)
         {
             if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
@@ -57,6 +75,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // 阶段三：进行中
         score += Time.deltaTime * scorePerSecond;
         int shown = Mathf.FloorToInt(score);
         scoreText.text = shown.ToString();
@@ -70,9 +89,16 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void BeginRun()
+    {
+        started = true;
+        Time.timeScale = 1f;
+        if (titleText != null) titleText.SetActive(false);
+    }
+
     public void AddScore(int points, Vector3 worldPos)
     {
-        if (isGameOver) return;
+        if (!started || isGameOver) return;
 
         score += points;
 
